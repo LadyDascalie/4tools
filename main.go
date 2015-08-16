@@ -19,6 +19,9 @@ const (
 )
 
 func main() {
+	fmt.Println("Notice:\nwhen your download is complete,")
+	fmt.Println("you will find your files under: ")
+	fmt.Println(setDownloadFolder() + "\n\n")
 	url := getUrlFromUser()
 	getImgLinks(url)
 	fmt.Println("\n\nYou can find your downloads under: ", setDownloadFolder())
@@ -118,7 +121,6 @@ func setDownloadFolder() (dirLocation string) {
 	}
 
 	dirLocation = usr.HomeDir + "/4tools_downloads"
-	fmt.Println(dirLocation)
 	os.MkdirAll(dirLocation, 0755)
 	os.Chdir(dirLocation)
 
