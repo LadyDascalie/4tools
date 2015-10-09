@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"golang.org/x/net/html"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,6 +10,8 @@ import (
 	"os/user"
 	"path"
 	"strings"
+
+	"golang.org/x/net/html"
 )
 
 const (
@@ -95,7 +96,7 @@ func downloadContent(linkTo string) {
 	defer resp.Body.Close()
 
 	if err != nil {
-		log.Fatal("Trouble making GET photo request!")
+		log.Fatal("Trouble making GET request!")
 	}
 
 	contents, err := ioutil.ReadAll(resp.Body)
