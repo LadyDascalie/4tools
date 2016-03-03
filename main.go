@@ -11,6 +11,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/ladydascalie/sortdir/sortdir"
 	"golang.org/x/net/html"
 )
 
@@ -26,6 +27,8 @@ func main() {
 	url := getURLFromUser()
 	getImgLinks(url)
 	fmt.Println("\n\nYou can find your downloads under: ", setDownloadFolder())
+	os.Chdir(setDownloadFolder())
+	sortdir.RunAsCMD()
 }
 
 // getURLFromUser grabs the thread URL from the user and returns it
@@ -46,6 +49,7 @@ func getURLFromUser() string {
 // It then passes those links to the downloadContent function
 func getImgLinks(url string) {
 	response, _ := http.Get(url)
+	defer response.Body.Close()
 
 	z := html.NewTokenizer(response.Body)
 	for {
@@ -55,7 +59,6 @@ func getImgLinks(url string) {
 		case tt == html.ErrorToken:
 			// End of the document
 			return
-
 		case tt == html.StartTagToken:
 			t := z.Token()
 			isAnchor := t.Data == "a"
@@ -74,7 +77,6 @@ func getImgLinks(url string) {
 				downloadContent(rawURL)
 			}
 		}
-		response.Body.Close()
 	}
 }
 
