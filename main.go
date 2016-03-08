@@ -11,6 +11,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/ladydascalie/sortdir/sortdir"
 	"golang.org/x/net/html"
 )
@@ -21,21 +22,50 @@ const (
 )
 
 func main() {
-	fmt.Println("Notice:\nwhen your download is complete,")
-	fmt.Println("you will find your files under: ")
-	fmt.Println(setDownloadFolder() + "\n\n")
+
+	// Pretty print the notice to the user
+	beginNotice()
+
+	// Get the URL from the user
 	url := getURLFromUser()
+
+	// Start downloading the images from the URL
 	getImgLinks(url)
-	fmt.Println("\n\nYou can find your downloads under: ", setDownloadFolder())
+
+	// Print out the completion notice
+	endNotice()
+
+	// CD into the download folder
 	os.Chdir(setDownloadFolder())
+
+	// Sort the files by filetype
 	sortdir.RunAsCMD()
+}
+
+func beginNotice() {
+	// Pretty print the notice
+	color.Green("******")
+	color.Green("~ Notice: ~\n")
+	color.White("When your download is complete,\nyou will find your files under:\n")
+	color.Magenta(setDownloadFolder())
+	color.Green("******" + "\n\n")
+}
+
+func endNotice() {
+	color.Green("******")
+	color.Green("Download complete!\n")
+	color.White("Your files have been saved to " + setDownloadFolder() + "\n\n")
+	color.White("For your convenience, your files have been sorted by extension.")
+	color.Green("******")
 }
 
 // getURLFromUser grabs the thread URL from the user and returns it
 func getURLFromUser() string {
 	input := bufio.NewReader(os.Stdin)
-	fmt.Println("Thread url ?")
+	fmt.Println("Please paste the thread URL:")
 
+	// Read the string until a newline character is entered
+	// AKA: Until the return key is pressed.
 	url, err := input.ReadString('\n')
 
 	if err != nil {
@@ -73,7 +103,7 @@ func getImgLinks(url string) {
 
 			if strings.Contains(href, cdnStem) {
 				rawURL := "http:" + href
-				fmt.Println(rawURL)
+				color.Magenta(rawURL)
 				downloadContent(rawURL)
 			}
 		}
@@ -98,7 +128,7 @@ func downloadContent(linkTo string) {
 
 	resp, err := http.Get(linkTo)
 	fmt.Println("Downloading... Please wait!")
-	fmt.Println(resp.Status)
+	color.Green(resp.Status)
 	defer resp.Body.Close()
 
 	if err != nil {
