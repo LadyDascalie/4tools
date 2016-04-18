@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/ladydascalie/4tools)](https://goreportcard.com/report/github.com/ladydascalie/4tools)
+
 # 4tools
 4tools provides a convenient way to download all the pictures from a 4chan thread, from any board.
 
