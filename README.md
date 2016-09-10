@@ -11,4 +11,4 @@ As 4tools doesn't contain any platform specific syscalls, you will be able to it
 ### Usage
 simply call `4tools` from terminal, then paste in the url, press enter and watch it go!
 
-![Usage example](http://i.imgur.com/f68u7N2.png)
+![Usage example](https://i.imgur.com/DbeFA4d.png)
