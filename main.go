@@ -14,11 +14,12 @@ import (
 	"github.com/fatih/color"
 	"github.com/ladydascalie/sortdir/sortdir"
 	"golang.org/x/net/html"
+	"sync"
 )
 
 const (
 	boardStem string = "//boards.4chan.org"
-	cdnStem   string = "//i.4cdn.org"
+	cdnStem string = "//i.4cdn.org"
 )
 
 func main() {
@@ -30,7 +31,16 @@ func main() {
 	url := getURLFromUser()
 
 	// Start downloading the images from the URL
-	getImgLinks(url)
+	media := getImgLinks(url)
+
+	var wg sync.WaitGroup
+
+	for _, v := range media {
+		wg.Add(1)
+		go downloadContent(&wg, v)
+	}
+
+	wg.Wait()
 
 	// Print out the completion notice
 	endNotice()
@@ -77,18 +87,21 @@ func getURLFromUser() string {
 
 // getImgLinks gets the URL provided by the user then collects all the links containing the CDN Stem in them.
 // It then passes those links to the downloadContent function
-func getImgLinks(url string) {
+func getImgLinks(url string) []string {
+	var urls []string
+
 	response, _ := http.Get(url)
 	defer response.Body.Close()
 
 	z := html.NewTokenizer(response.Body)
+
 	for {
 		tt := z.Next()
 
 		switch {
 		case tt == html.ErrorToken:
 			// End of the document
-			return
+			return urls
 		case tt == html.StartTagToken:
 			t := z.Token()
 			isAnchor := t.Data == "a"
@@ -103,11 +116,11 @@ func getImgLinks(url string) {
 
 			if strings.Contains(href, cdnStem) {
 				rawURL := "http:" + href
-				color.Magenta(rawURL)
-				downloadContent(rawURL)
+				urls = append(urls, rawURL)
 			}
 		}
 	}
+	return urls
 }
 
 // getHref get the content of the href attribute from <a> tags
@@ -122,7 +135,8 @@ func getHref(t html.Token) (ok bool, href string) {
 }
 
 // downloadContent makes a get request for the requested file then writes its contents to disk
-func downloadContent(linkTo string) {
+func downloadContent(wg *sync.WaitGroup, linkTo string) {
+	defer wg.Done()
 
 	setDownloadFolder()
 
@@ -152,15 +166,15 @@ func downloadContent(linkTo string) {
 }
 
 // setDownloadFolder sets the download folder in the user's home folder
-func setDownloadFolder() (dirLocation string) {
+func setDownloadFolder() (string) {
 	usr, err := user.Current()
 	if err != nil {
 		log.Fatal("Trouble looking up username!")
 	}
 
-	dirLocation = usr.HomeDir + "/4tools_downloads"
+	dirLocation := usr.HomeDir + "/4tools_downloads"
 	os.MkdirAll(dirLocation, 0755)
 	os.Chdir(dirLocation)
 
-	return
+	return dirLocation
 }
