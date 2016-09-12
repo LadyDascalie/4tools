@@ -19,7 +19,7 @@ import (
 
 const (
 	boardStem string = "//boards.4chan.org"
-	cdnStem string = "//i.4cdn.org"
+	cdnStem   string = "//i.4cdn.org"
 )
 
 func main() {
@@ -166,7 +166,7 @@ func downloadContent(wg *sync.WaitGroup, linkTo string) {
 }
 
 // setDownloadFolder sets the download folder in the user's home folder
-func setDownloadFolder() (string) {
+func setDownloadFolder() string {
 	usr, err := user.Current()
 	if err != nil {
 		log.Fatal("Trouble looking up username!")
