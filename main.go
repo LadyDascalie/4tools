@@ -11,32 +11,42 @@ import (
 	"path"
 	"strings"
 
+	"flag"
+	"sync"
+	"time"
+
 	"github.com/fatih/color"
 	"github.com/ladydascalie/sortdir/sortdir"
 	"golang.org/x/net/html"
-	"sync"
 )
 
 const (
-	boardStem string = "//boards.4chan.org"
+	//boardStem string = "//boards.4chan.org"
 	cdnStem   string = "//i.4cdn.org"
 )
 
+var subFolderName string
+
 func main() {
+	flag.StringVar(&subFolderName, "f", "", "4tools -f folder_name")
+	flag.Parse()
 
 	// Pretty print the notice to the user
-	beginNotice()
+	startNotice()
 
 	// Get the URL from the user
-	url := getURLFromUser()
+	url := getURLFromStdin()
 
 	// Start downloading the images from the URL
-	media := getImgLinks(url)
+	media := getImageLinks(url)
 
 	var wg sync.WaitGroup
 
 	for _, v := range media {
 		wg.Add(1)
+
+		// Don't be too agressive...
+		time.Sleep(50 * time.Millisecond)
 		go downloadContent(&wg, v)
 	}
 
@@ -48,12 +58,11 @@ func main() {
 	// CD into the download folder
 	os.Chdir(setDownloadFolder())
 
-	// Sort the files by filetype
+	// Sort the files by file type
 	sortdir.RunAsCMD()
 }
 
-func beginNotice() {
-	// Pretty print the notice
+func startNotice() {
 	color.Green("******")
 	color.Green("~ Notice: ~\n")
 	color.White("When your download is complete,\nyou will find your files under:\n")
@@ -62,6 +71,7 @@ func beginNotice() {
 }
 
 func endNotice() {
+	fmt.Print("\n\n")
 	color.Green("******")
 	color.Green("Download complete!\n")
 	color.White("Your files have been saved to " + setDownloadFolder() + "\n\n")
@@ -69,8 +79,8 @@ func endNotice() {
 	color.Green("******")
 }
 
-// getURLFromUser grabs the thread URL from the user and returns it
-func getURLFromUser() string {
+// getURLFromStdin grabs the thread URL the user provides through Stdin
+func getURLFromStdin() string {
 	input := bufio.NewReader(os.Stdin)
 	fmt.Println("Please paste the thread URL:")
 
@@ -87,7 +97,7 @@ func getURLFromUser() string {
 
 // getImgLinks gets the URL provided by the user then collects all the links containing the CDN Stem in them.
 // It then passes those links to the downloadContent function
-func getImgLinks(url string) []string {
+func getImageLinks(url string) []string {
 	var urls []string
 
 	response, _ := http.Get(url)
@@ -120,7 +130,6 @@ func getImgLinks(url string) []string {
 			}
 		}
 	}
-	return urls
 }
 
 // getHref get the content of the href attribute from <a> tags
@@ -141,12 +150,11 @@ func downloadContent(wg *sync.WaitGroup, linkTo string) {
 	setDownloadFolder()
 
 	resp, err := http.Get(linkTo)
-	fmt.Println("Downloading... Please wait!")
-	color.Green(resp.Status)
-	defer resp.Body.Close()
+	// fmt.Println("Downloading... Please wait!")
+	fmt.Print(".")
 
 	if err != nil {
-		log.Fatal("Trouble making GET request!")
+		log.Fatal(err)
 	}
 
 	contents, err := ioutil.ReadAll(resp.Body)
@@ -163,6 +171,7 @@ func downloadContent(wg *sync.WaitGroup, linkTo string) {
 	if err != nil {
 		log.Fatal("Trouble creating file! -- ", err)
 	}
+	resp.Body.Close()
 }
 
 // setDownloadFolder sets the download folder in the user's home folder
@@ -172,9 +181,15 @@ func setDownloadFolder() string {
 		log.Fatal("Trouble looking up username!")
 	}
 
-	dirLocation := usr.HomeDir + "/4tools_downloads"
-	os.MkdirAll(dirLocation, 0755)
-	os.Chdir(dirLocation)
+	var downloadLocation string
+	if subFolderName != "" {
+		downloadLocation = usr.HomeDir + "/4tools_downloads/" + subFolderName
+	} else {
+		downloadLocation = usr.HomeDir + "/4tools_downloads"
+	}
 
-	return dirLocation
+	os.MkdirAll(downloadLocation, 0755)
+	os.Chdir(downloadLocation)
+
+	return downloadLocation
 }
