@@ -26,16 +26,22 @@ const (
 )
 
 var subFolderName string
+var userInput string
 
 func main() {
 	flag.StringVar(&subFolderName, "f", "", "4tools -f folder_name")
+	flag.StringVar(&userInput, "u", "", "4tools -u <thread url>")
 	flag.Parse()
 
 	// Pretty print the notice to the user
-	startNotice()
+	//startNotice()
 
-	// Get the URL from the user
-	url := getURLFromStdin()
+	var url string
+	if userInput == "" {
+		url = getURLFromStdin()
+	} else {
+		url = userInput
+	}
 
 	// Start downloading the images from the URL
 	media := getImageLinks(url)
@@ -45,7 +51,7 @@ func main() {
 	for _, v := range media {
 		wg.Add(1)
 
-		// Don't be too agressive...
+		// Don't be too aggressive...
 		time.Sleep(50 * time.Millisecond)
 		go downloadContent(&wg, v)
 	}
@@ -53,7 +59,7 @@ func main() {
 	wg.Wait()
 
 	// Print out the completion notice
-	endNotice()
+	//endNotice()
 
 	// CD into the download folder
 	os.Chdir(setDownloadFolder())
@@ -147,11 +153,11 @@ func getHref(t html.Token) (ok bool, href string) {
 func downloadContent(wg *sync.WaitGroup, linkTo string) {
 	defer wg.Done()
 
-	setDownloadFolder()
+	fl := setDownloadFolder()
 
 	resp, err := http.Get(linkTo)
 	// fmt.Println("Downloading... Please wait!")
-	fmt.Print(".")
+	//fmt.Print(".")
 
 	if err != nil {
 		log.Fatal(err)
@@ -167,6 +173,7 @@ func downloadContent(wg *sync.WaitGroup, linkTo string) {
 		log.Fatalf("Trouble deriving file name for %s", linkTo)
 	}
 
+	fmt.Println(fmt.Sprintf("%s/%s", fl, filename))
 	err = ioutil.WriteFile(filename, contents, 0644)
 	if err != nil {
 		log.Fatal("Trouble creating file! -- ", err)
