@@ -22,7 +22,7 @@ import (
 
 const (
 	//boardStem string = "//boards.4chan.org"
-	cdnStem   string = "//i.4cdn.org"
+	cdnStem string = "//i.4cdn.org"
 )
 
 var subFolderName string
