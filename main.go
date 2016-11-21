@@ -22,7 +22,7 @@ import (
 
 const (
 	//boardStem string = "//boards.4chan.org"
-	cdnStem   string = "//i.4cdn.org"
+	cdnStem string = "//i.4cdn.org"
 )
 
 var subFolderName string
@@ -150,26 +150,28 @@ func downloadContent(wg *sync.WaitGroup, linkTo string) {
 	setDownloadFolder()
 
 	resp, err := http.Get(linkTo)
-	// fmt.Println("Downloading... Please wait!")
-	fmt.Print(".")
-
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
+	fmt.Print(".")
 
 	contents, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("Trouble reading response body!")
+		log.Println("Trouble reading response body!")
+		return
 	}
 
 	filename := path.Base(linkTo)
 	if filename == "" {
-		log.Fatalf("Trouble deriving file name for %s", linkTo)
+		log.Println("Trouble deriving file name for", linkTo)
+		return
 	}
 
 	err = ioutil.WriteFile(filename, contents, 0644)
 	if err != nil {
-		log.Fatal("Trouble creating file! -- ", err)
+		log.Println("Trouble creating file! -- ", err)
+		return
 	}
 	resp.Body.Close()
 }
@@ -178,6 +180,7 @@ func downloadContent(wg *sync.WaitGroup, linkTo string) {
 func setDownloadFolder() string {
 	usr, err := user.Current()
 	if err != nil {
+		// This should kill the program if it fails
 		log.Fatal("Trouble looking up username!")
 	}
 
