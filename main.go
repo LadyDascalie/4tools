@@ -27,6 +27,8 @@ const (
 
 var subFolderName string
 
+var semaphore = make(chan struct{}, 12)
+
 func main() {
 	flag.StringVar(&subFolderName, "f", "", "4tools -f folder_name")
 	flag.Parse()
@@ -51,6 +53,7 @@ func main() {
 	}
 
 	wg.Wait()
+	close(semaphore)
 
 	// Print out the completion notice
 	endNotice()
@@ -145,6 +148,10 @@ func getHref(t html.Token) (ok bool, href string) {
 
 // downloadContent makes a get request for the requested file then writes its contents to disk
 func downloadContent(wg *sync.WaitGroup, linkTo string) {
+
+	semaphore <- struct{}{}
+	defer func() { <-semaphore }()
+
 	defer wg.Done()
 
 	setDownloadFolder()
@@ -154,7 +161,6 @@ func downloadContent(wg *sync.WaitGroup, linkTo string) {
 		log.Println(err)
 		return
 	}
-	fmt.Print(".")
 
 	contents, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
