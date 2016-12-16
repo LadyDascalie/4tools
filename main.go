@@ -21,13 +21,18 @@ import (
 )
 
 const (
-	//boardStem string = "//boards.4chan.org"
-	cdnStem string = "//i.4cdn.org"
+	// This older scheme is apparently not is use anymore
+	// cdnStem string = "//i.4cdn.org"
+	cdnStem string = "//is.4chan.org"
 )
 
 var subFolderName string
 
 var semaphore = make(chan struct{}, 12)
+
+func init() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+}
 
 func main() {
 	flag.StringVar(&subFolderName, "f", "", "4tools -f folder_name")
@@ -47,7 +52,7 @@ func main() {
 	for _, v := range media {
 		wg.Add(1)
 
-		// Don't be too agressive...
+		// Don't be too aggressive...
 		time.Sleep(50 * time.Millisecond)
 		go downloadContent(&wg, v)
 	}
@@ -107,7 +112,6 @@ func getImageLinks(url string) []string {
 	defer response.Body.Close()
 
 	z := html.NewTokenizer(response.Body)
-
 	for {
 		tt := z.Next()
 
@@ -127,6 +131,7 @@ func getImageLinks(url string) []string {
 				continue
 			}
 
+			fmt.Println(href)
 			if strings.Contains(href, cdnStem) {
 				rawURL := "http:" + href
 				urls = append(urls, rawURL)
@@ -150,7 +155,9 @@ func getHref(t html.Token) (ok bool, href string) {
 func downloadContent(wg *sync.WaitGroup, linkTo string) {
 
 	semaphore <- struct{}{}
-	defer func() { <-semaphore }()
+	defer func() {
+		<-semaphore
+	}()
 
 	defer wg.Done()
 
